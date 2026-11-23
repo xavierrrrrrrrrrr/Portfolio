@@ -14,8 +14,16 @@ export default function CrtMonitor() {
   const [latency, setLatency] = useState(14);
   const [clock, setClock] = useState("");
   const [reservedSlots, setReservedSlots] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [audioError, setAudioError] = useState(false);
 
   const canvasRef = useRef(null);
+  const danceCanvasRef = useRef(null);
+  const audioRef = useRef(null);
+  const audioCtxRef = useRef(null);
+  const analyserRef = useRef(null);
+  const bassRef = useRef(0); // smoothed bass energy 0..1
+  const jumpRef = useRef(0); // bass-hit jump impulse 0..1
 
   // Live clock (America/Toronto) for the CH-01 terminal readout
   useEffect(() => {
@@ -73,8 +81,178 @@ export default function CrtMonitor() {
 
   // Toggle CRT power
   const togglePower = () => {
+    if (isPowerOn && audioRef.current && isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    }
     setIsPowerOn((prev) => !prev);
   };
+
+  // Play / pause "Baiana" by Barbatuques (hosted on Uploadthing).
+  // The audio is routed through an AnalyserNode so the dancers can
+  // move to the actual bass.
+  const toggleMusic = () => {
+    if (!audioRef.current) {
+      const audio = new Audio(
+        "https://11laitvi19.ufs.sh/f/nduEi13bO19R5gpbPmjWN30HAkLVtl6h7pJEcafqFCIDmiZr"
+      );
+      audio.crossOrigin = "anonymous"; // required for AnalyserNode taps
+      audio.loop = true;
+      audio.volume = 1;
+      audio.addEventListener("error", () => setAudioError(true));
+      // Reflect the real playback state — play() resolves before audio
+      // actually renders, and the WAV is large enough to buffer slowly.
+      audio.addEventListener("playing", () => {
+        audioCtxRef.current?.resume().catch(() => {});
+        setIsPlaying(true);
+        setAudioError(false);
+      });
+      audio.addEventListener("pause", () => setIsPlaying(false));
+
+      // Web Audio graph: element -> analyser -> speakers
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) {
+          const ctx = new AudioCtx();
+          const analyser = ctx.createAnalyser();
+          analyser.fftSize = 2048;
+          analyser.smoothingTimeConstant = 0.55;
+          ctx.createMediaElementSource(audio).connect(analyser);
+          analyser.connect(ctx.destination);
+          audioCtxRef.current = ctx;
+          analyserRef.current = analyser;
+        }
+      } catch {
+        // No Web Audio — dancers fall back to the idle beat
+      }
+      audioRef.current = audio;
+    }
+    const audio = audioRef.current;
+    if (isPlaying || !audio.paused) {
+      audio.pause();
+      setIsPlaying(false);
+      return;
+    }
+    setAudioError(false);
+    audioCtxRef.current?.resume().catch(() => {});
+    audio.play().catch(() => setAudioError(true));
+  };
+
+  // Dancing stickmen overlay — runs only while music is playing.
+  // Movement is driven by the real bass energy from the AnalyserNode:
+  // dancers bounce higher on bass hits and swing limbs with the energy.
+  useEffect(() => {
+    const canvas = danceCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const W = canvas.width;
+    const H = canvas.height;
+
+    // Always leave a clean screen when the music stops
+    if (!isPlaying || !isPowerOn) {
+      ctx.clearRect(0, 0, W, H);
+      bassRef.current = 0;
+      jumpRef.current = 0;
+      return;
+    }
+
+    const groundY = H * 0.86;
+    const dancerCount = 5;
+    const colors = ["#34d399", "#34d399", "#38bdf8", "#34d399", "#fb923c"];
+    const freqData = new Uint8Array(1024);
+
+    const limb = (x1, y1, x2, y2) => {
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    };
+
+    const drawDancer = (cx, h, phase, color, energy, jump) => {
+      const bounce =
+        (Math.abs(Math.sin(phase)) * h * 0.09 + jump * h * 0.45) *
+        (0.5 + energy);
+      const sway = Math.sin(phase) * h * 0.07 * (0.5 + energy);
+      const hipX = cx + sway;
+      const hipY = groundY - h * 0.52 - bounce;
+      const shoX = hipX + sway * 0.6;
+      const shoY = hipY - h * 0.34;
+      const headX = shoX + sway * 0.5;
+      const headY = shoY - h * 0.24;
+
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = Math.max(2, h * 0.055);
+      ctx.lineCap = "round";
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 6;
+
+      // legs — alternating scissor kick, amplitude follows the bass
+      const kick = Math.sin(phase) * h * 0.3 * (0.5 + energy);
+      limb(hipX, hipY, hipX - h * 0.13 + kick, groundY);
+      limb(hipX, hipY, hipX + h * 0.13 - kick, groundY);
+      // torso
+      limb(hipX, hipY, shoX, shoY);
+      // arms — opposite swing to legs
+      const arm = Math.sin(phase + Math.PI) * h * 0.26 * (0.5 + energy);
+      limb(shoX, shoY, shoX - h * 0.2 + arm, shoY - h * 0.2);
+      limb(shoX, shoY, shoX + h * 0.2 - arm, shoY - h * 0.2);
+      // head
+      ctx.beginPath();
+      ctx.arc(headX, headY, h * 0.11, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    };
+
+    let rafId;
+    let prevBass = 0;
+    const render = (now) => {
+      ctx.clearRect(0, 0, W, H);
+
+      // Sample the real sub-bass band (~20–95 Hz ≈ bins 1–4 at 48 kHz)
+      let bass = bassRef.current;
+      const analyser = analyserRef.current;
+      if (analyser) {
+        analyser.getByteFrequencyData(freqData);
+        let sum = 0;
+        for (let i = 1; i <= 4; i++) sum += freqData[i];
+        const raw = sum / (4 * 255);
+        bass = bassRef.current * 0.75 + raw * 0.25;
+        // Bass hit detection: sharp rise in the low end triggers a jump
+        if (raw > 0.28 && raw > prevBass * 1.15) {
+          jumpRef.current = 1;
+        }
+        prevBass = raw;
+      }
+      bassRef.current = bass;
+      jumpRef.current *= 0.92; // jump impulse decays a bit slower
+      const energy = Math.min(1, bass * 1.6);
+      const jump = jumpRef.current;
+
+      // dance-floor strip
+      ctx.fillStyle = "rgba(0,0,0,0.4)";
+      ctx.fillRect(0, groundY - H * 0.05, W, H * 0.2);
+      ctx.strokeStyle = "rgba(52,211,153,0.35)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, groundY);
+      ctx.lineTo(W, groundY);
+      ctx.stroke();
+
+      // ~132 BPM idle groove; dancers kick harder when the bass hits
+      const beat = (now / 1000) * Math.PI * 2 * 2.2;
+      const h = H * 0.34;
+      for (let i = 0; i < dancerCount; i++) {
+        const cx = (W / (dancerCount + 1)) * (i + 1);
+        drawDancer(cx, h, beat + i * 0.9, colors[i % colors.length], energy, jump);
+      }
+      rafId = requestAnimationFrame(render);
+    };
+    rafId = requestAnimationFrame(render);
+    return () => cancelAnimationFrame(rafId);
+  }, [isPlaying, isPowerOn]);
 
   // Telemetry fluctuation simulator
   useEffect(() => {
@@ -295,6 +473,15 @@ export default function CrtMonitor() {
           {/* Vignette curvature */}
           <div className="absolute inset-0 bg-[radial-gradient(circle,transparent_40%,rgba(0,0,0,0.85)_100%)] pointer-events-none z-20" />
 
+          {/* Dancing stickmen overlay — visible only while music plays */}
+          <canvas
+            ref={danceCanvasRef}
+            width={560}
+            height={420}
+            className="absolute inset-0 z-[5] w-full h-full pointer-events-none"
+            aria-hidden="true"
+          />
+
           {/* Screen Power Off / Static Glitch */}
           {!isPowerOn ? (
             <div className="z-10 flex flex-col items-center justify-center text-center p-3">
@@ -365,7 +552,13 @@ export default function CrtMonitor() {
 
               {/* Bottom Power / Channel Bar */}
               <div className="absolute bottom-1 text-[7px] sm:text-[9px] font-editorial-mono text-zinc-500 tracking-tighter z-10 px-1 text-center truncate max-w-full">
-                {channel === 3 ? "HTTP://ROCKY-POULIOT.VERCEL.APP" : t.tv.signalOk}
+                {audioError
+                  ? "♪ AUDIO STREAM UNAVAILABLE"
+                  : isPlaying
+                    ? "♪ NOW PLAYING: BAIANA — BARBATUQUES"
+                    : channel === 3
+                      ? "HTTP://ROCKY-POULIOT.VERCEL.APP"
+                      : t.tv.signalOk}
               </div>
             </>
           )}
@@ -379,6 +572,39 @@ export default function CrtMonitor() {
               <div key={idx} className="h-0.5 sm:h-1 bg-stone-600 rounded-xs" />
             ))}
           </div>
+
+          {/* Music button: plays "Baiana" — Barbatuques */}
+          <button
+            type="button"
+            onClick={toggleMusic}
+            disabled={!isPowerOn}
+            aria-label={isPlaying ? "Pause Baiana" : "Play Baiana by Barbatuques"}
+            aria-pressed={isPlaying}
+            title={
+              !isPowerOn
+                ? "Turn the TV on first"
+                : isPlaying
+                  ? "Pause Baiana"
+                  : "Play Baiana — Barbatuques"
+            }
+            className={`w-full flex items-center justify-center gap-1 rounded-md border py-1 sm:py-1.5 text-[8px] sm:text-[9px] font-editorial-mono font-bold tracking-widest uppercase transition-all ${
+              !isPowerOn
+                ? "bg-stone-500/50 border-stone-500 text-stone-300 cursor-not-allowed"
+                : isPlaying
+                  ? "bg-emerald-900 border-emerald-500 text-emerald-300 shadow-[0_0_8px_rgba(52,211,153,0.4)] cursor-pointer"
+                  : "bg-stone-800 border-stone-600 text-stone-200 hover:border-emerald-400 cursor-pointer"
+            }`}
+          >
+            <span className="text-[10px] sm:text-xs leading-none">♪</span>
+            <span className="truncate">{isPlaying ? "❚❚" : "BAIANA"}</span>
+            {isPlaying && (
+              <span className="flex items-end gap-px h-2.5" aria-hidden="true">
+                <span className="w-0.5 bg-emerald-300 animate-pulse" style={{ height: "60%" }} />
+                <span className="w-0.5 bg-emerald-300 animate-pulse" style={{ height: "100%", animationDelay: "150ms" }} />
+                <span className="w-0.5 bg-emerald-300 animate-pulse" style={{ height: "40%", animationDelay: "300ms" }} />
+              </span>
+            )}
+          </button>
 
           {/* Interactive Dials */}
           <div className="space-y-2 sm:space-y-3 flex flex-col items-center my-0.5 sm:my-1">
