@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useLanguage } from "../context/LanguageContext";
+import { getProjects } from "../../data/projects";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 
@@ -11,7 +12,7 @@ export default function WorkPage() {
   const isFr = language === "fr";
   const [filter, setFilter] = useState("all");
 
-  const projects = t.projects;
+  const projects = getProjects(language);
 
   const categories = [
     { key: "all", label: isFr ? "Tous les projets" : "All Projects" },

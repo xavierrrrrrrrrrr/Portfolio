@@ -3,15 +3,16 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useLanguage } from "./context/LanguageContext";
+import { getProjects } from "../data/projects";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import CrtMonitor from "./components/CrtMonitor";
 
 export default function Portfolio() {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [activeProjectIndex, setActiveProjectIndex] = useState(0);
 
-  const projects = t.projects;
+  const projects = getProjects(language);
   const activeProject = projects[activeProjectIndex] || projects[0];
 
   return (
