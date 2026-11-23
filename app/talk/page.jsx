@@ -288,9 +288,6 @@ export default function LetsTalkPage() {
                   <thead>
                     <tr className="text-neutral-400 border-b border-white/10">
                       <th className="py-2 pr-4">ID</th>
-                      <th className="py-2 pr-4">{isFr ? "Client" : "Client"}</th>
-                      <th className="py-2 pr-4">{isFr ? "Courriel" : "Email"}</th>
-                      <th className="py-2 pr-4">{isFr ? "Budget" : "Budget"}</th>
                       <th className="py-2 pr-4">{isFr ? "Créneau" : "Slot"}</th>
                       <th className="py-2">{isFr ? "Date" : "Recorded At"}</th>
                     </tr>
@@ -300,11 +297,6 @@ export default function LetsTalkPage() {
                       <tr key={inq.id} className="text-neutral-300 hover:bg-white/5">
                         <td className="py-2.5 pr-4 text-emerald-400 font-bold whitespace-nowrap">
                           #XB-{String(inq.id).padStart(4, "0")}
-                        </td>
-                        <td className="py-2.5 pr-4 font-bold text-white whitespace-nowrap">{inq.name}</td>
-                        <td className="py-2.5 pr-4 text-neutral-300 whitespace-nowrap">{inq.email}</td>
-                        <td className="py-2.5 pr-4 text-[#d94726] font-bold whitespace-nowrap">
-                          {inq.budget || "—"}
                         </td>
                         <td className="py-2.5 pr-4 text-neutral-400 whitespace-nowrap">
                           {formatStoredDay(inq.selected_day)} · {inq.selected_slot}
