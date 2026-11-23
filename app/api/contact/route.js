@@ -90,7 +90,7 @@ export async function POST(req) {
       );
     }
 
-    const insertedId = tryInsertInquiry({
+    const insertedId = await tryInsertInquiry({
       name,
       email,
       company: cleanString(body.company, MAX_LENGTHS.company),
@@ -127,7 +127,7 @@ export async function POST(req) {
 export async function GET() {
   try {
     // Only expose booking fields — never client PII.
-    const bookings = getAllInquiries().map((inq) => ({
+    const bookings = (await getAllInquiries()).map((inq) => ({
       id: inq.id,
       selected_day: inq.selected_day,
       selected_slot: inq.selected_slot,
