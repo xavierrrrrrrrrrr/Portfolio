@@ -12,8 +12,44 @@ export default function CrtMonitor() {
   const [isSwitching, setIsSwitching] = useState(false);
   const [fps, setFps] = useState(60);
   const [latency, setLatency] = useState(14);
+  const [clock, setClock] = useState("");
+  const [reservedSlots, setReservedSlots] = useState(null);
 
   const canvasRef = useRef(null);
+
+  // Live clock (America/Toronto) for the CH-01 terminal readout
+  useEffect(() => {
+    const tick = () =>
+      setClock(
+        new Date().toLocaleTimeString("en-CA", {
+          hour12: false,
+          timeZone: "America/Toronto",
+        })
+      );
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Pull real booking count once so the terminal reflects live data
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/contact")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled && data.success) {
+          const booked = new Set(
+            data.inquiries
+              .filter((i) => i.selected_day && i.selected_slot)
+              .map((i) => `${i.selected_day}|${i.selected_slot}`)
+          );
+          setReservedSlots(booked.size);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Cycle channels when clicking the main channel knob
   const cycleChannel = () => {
@@ -284,7 +320,10 @@ export default function CrtMonitor() {
                   <p className="font-editorial-mono text-[8px] sm:text-[11px] text-emerald-500/90 mt-1 sm:mt-2 leading-relaxed">
                     {t.tv.ch1Sub1}
                     <br />
-                    &gt; latency: {latency}ms · {fps}fps
+                    &gt; mtl: {clock || "--:--:--"} ET · latency: {latency}ms · {fps}fps
+                    <br />
+                    &gt; reserved slots:{" "}
+                    {reservedSlots === null ? "…" : reservedSlots}
                   </p>
                   <div className="mt-1 sm:mt-2 text-[7px] sm:text-[9px] font-editorial-mono text-emerald-600/80">
                     &gt; node: mtl-edge-01 [ACTIVE]

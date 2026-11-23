@@ -6,23 +6,40 @@ import { useLanguage } from "../context/LanguageContext";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 
-// 14 rolling business days for the carousel
-const CAROUSEL_DAYS = [
-  { key: "2026-11-24", dayEn: "Mon", dayFr: "Lun", dateNum: 24, monthEn: "Nov", monthFr: "Nov", fullDate: "Nov 24, 2026" },
-  { key: "2026-11-25", dayEn: "Tue", dayFr: "Mar", dateNum: 25, monthEn: "Nov", monthFr: "Nov", fullDate: "Nov 25, 2026" },
-  { key: "2026-11-26", dayEn: "Wed", dayFr: "Mer", dateNum: 26, monthEn: "Nov", monthFr: "Nov", fullDate: "Nov 26, 2026" },
-  { key: "2026-11-27", dayEn: "Thu", dayFr: "Jeu", dateNum: 27, monthEn: "Nov", monthFr: "Nov", fullDate: "Nov 27, 2026" },
-  { key: "2026-11-28", dayEn: "Fri", dayFr: "Ven", dateNum: 28, monthEn: "Nov", monthFr: "Nov", fullDate: "Nov 28, 2026" },
-  { key: "2026-12-01", dayEn: "Mon", dayFr: "Lun", dateNum: 1, monthEn: "Dec", monthFr: "Déc", fullDate: "Dec 01, 2026" },
-  { key: "2026-12-02", dayEn: "Tue", dayFr: "Mar", dateNum: 2, monthEn: "Dec", monthFr: "Déc", fullDate: "Dec 02, 2026" },
-  { key: "2026-12-03", dayEn: "Wed", dayFr: "Mer", dateNum: 3, monthEn: "Dec", monthFr: "Déc", fullDate: "Dec 03, 2026" },
-  { key: "2026-12-04", dayEn: "Thu", dayFr: "Jeu", dateNum: 4, monthEn: "Dec", monthFr: "Déc", fullDate: "Dec 04, 2026" },
-  { key: "2026-12-05", dayEn: "Fri", dayFr: "Ven", dateNum: 5, monthEn: "Dec", monthFr: "Déc", fullDate: "Dec 05, 2026" },
-  { key: "2026-12-08", dayEn: "Mon", dayFr: "Lun", dateNum: 8, monthEn: "Dec", monthFr: "Déc", fullDate: "Dec 08, 2026" },
-  { key: "2026-12-09", dayEn: "Tue", dayFr: "Mar", dateNum: 9, monthEn: "Dec", monthFr: "Déc", fullDate: "Dec 09, 2026" },
-  { key: "2026-12-10", dayEn: "Wed", dayFr: "Mer", dateNum: 10, monthEn: "Dec", monthFr: "Déc", fullDate: "Dec 10, 2026" },
-  { key: "2026-12-11", dayEn: "Thu", dayFr: "Jeu", dateNum: 11, monthEn: "Dec", monthFr: "Déc", fullDate: "Dec 11, 2026" },
-];
+// Generate the next `count` business days (Mon-Fri) starting tomorrow,
+// localized for EN/FR display. Never goes stale like a hardcoded list.
+function generateCarouselDays(count = 14) {
+  const days = [];
+  const cursor = new Date();
+  cursor.setHours(0, 0, 0, 0);
+  cursor.setDate(cursor.getDate() + 1); // start tomorrow
+
+  const toKey = (d) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+  while (days.length < count) {
+    const dow = cursor.getDay();
+    if (dow !== 0 && dow !== 6) {
+      days.push({
+        key: toKey(cursor),
+        dayEn: cursor.toLocaleDateString("en-US", { weekday: "short" }),
+        dayFr: cursor.toLocaleDateString("fr-CA", { weekday: "short" }),
+        dateNum: cursor.getDate(),
+        monthEn: cursor.toLocaleDateString("en-US", { month: "short" }),
+        monthFr: cursor.toLocaleDateString("fr-CA", { month: "short" }),
+        fullDate: cursor.toLocaleDateString("en-US", {
+          month: "short",
+          day: "2-digit",
+          year: "numeric",
+        }),
+      });
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return days;
+}
+
+const CAROUSEL_DAYS = generateCarouselDays();
 
 function fallbackInquiryRef() {
   return `#XB-INQ-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -51,6 +68,7 @@ export default function LetsTalkPage() {
     email: "",
     company: "",
     message: "",
+    website: "", // honeypot — must stay empty for humans
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -135,6 +153,7 @@ export default function LetsTalkPage() {
       message: formData.message,
       selected_day: selectedDay.key,
       selected_slot: activeSlot,
+      website: formData.website,
     };
 
     try {
@@ -145,6 +164,16 @@ export default function LetsTalkPage() {
       });
 
       const result = await res.json();
+
+      if (res.status === 409) {
+        setErrorMessage(
+          isFr
+            ? "Ce créneau vient d'être réservé. Veuillez en choisir un autre."
+            : "That time slot was just booked. Please pick another one."
+        );
+        loadBookings();
+        return;
+      }
 
       if (!res.ok) {
         throw new Error(result.error || "Failed to record inquiry");
@@ -273,9 +302,17 @@ export default function LetsTalkPage() {
             </div>
 
             {loadingDb ? (
-              <p className="text-xs text-neutral-400 py-4 font-mono">
-                {isFr ? "Chargement des enregistrements..." : "Fetching records from SQLite database..."}
-              </p>
+              <div className="space-y-2 py-3" aria-hidden="true">
+                {[0, 1, 2].map((i) => (
+                  <div
+                    key={i}
+                    className="h-7 rounded bg-white/10 animate-pulse"
+                  />
+                ))}
+                <p className="text-xs text-neutral-400 font-mono pt-1">
+                  {isFr ? "Chargement des enregistrements..." : "Fetching records from SQLite database..."}
+                </p>
+              </div>
             ) : dbInquiries.length === 0 ? (
               <p className="text-xs text-neutral-400 py-4 font-mono">
                 {isFr
@@ -425,6 +462,7 @@ export default function LetsTalkPage() {
                         type="button"
                         onClick={() => setSelectedDayIndex(idx)}
                         disabled={dayBooked}
+                        aria-pressed={isSelected}
                         title={dayBooked ? (isFr ? "Complètement réservé" : "Fully booked") : undefined}
                         className={`shrink-0 w-18 sm:w-20 p-2 sm:p-2.5 rounded-xl border text-center transition-all snap-start flex flex-col justify-between items-center ${
                           dayBooked
@@ -464,6 +502,7 @@ export default function LetsTalkPage() {
                         type="button"
                         onClick={() => setSelectedSlot(slot)}
                         disabled={slotBooked}
+                        aria-pressed={activeSlot === slot}
                         title={slotBooked ? (isFr ? "Créneau déjà réservé" : "Slot already booked") : undefined}
                         className={`py-2 px-1 text-center rounded border text-[11px] sm:text-xs transition-all ${
                           slotBooked
@@ -530,7 +569,7 @@ export default function LetsTalkPage() {
           {/* Right Column: Full Project Inquiry Form (Saves to SQLite Database) */}
           <div className="lg:col-span-7 bg-white border border-black/15 rounded-2xl p-5 sm:p-8 lg:p-10 shadow-sm">
             {isSubmitted ? (
-              <div className="text-center py-8 sm:py-12 space-y-4 sm:space-y-5">
+              <div className="text-center py-8 sm:py-12 space-y-4 sm:space-y-5" aria-live="polite">
                 <div className="w-14 sm:w-16 h-14 sm:h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl sm:text-3xl mx-auto font-bold">
                   ✓
                 </div>
@@ -542,13 +581,19 @@ export default function LetsTalkPage() {
                     ? `Merci ${formData.name}. Votre demande a été enregistrée avec succès dans notre base de données SQLite sous la référence ${refId}. Vous recevrez une confirmation pour le créneau sélectionné.`
                     : `Thank you, ${formData.name}. Your inquiry has been persisted in our SQLite database under reference ${refId}. We will confirm your requested slot shortly.`}
                 </p>
-                <div className="p-3.5 sm:p-4 bg-stone-100 rounded-lg text-xs font-editorial-mono text-stone-700 max-w-sm mx-auto space-y-1 border border-black/10 text-left">
-                  <div className="font-bold text-emerald-700">RECORDED IN DATABASE (SQLite)</div>
-                  <div>REFERENCE: {refId}</div>
-                  <div>BUDGET: {budget}</div>
-                  <div>
-                    SLOT: {isFr ? selectedDay.dayFr : selectedDay.dayEn} {selectedDay.dateNum}{" "}
+                <div className="p-3.5 sm:p-4 bg-zinc-950 rounded-lg text-[11px] sm:text-xs font-editorial-mono text-emerald-400 max-w-md mx-auto space-y-1 border border-emerald-500/30 text-left shadow-inner">
+                  <div className="text-emerald-600">$ sqlite3 data/inquiries.db</div>
+                  <div className="text-emerald-500/80">
+                    &gt; INSERT INTO inquiries (...) VALUES (...)
+                  </div>
+                  <div className="text-white font-bold">
+                    RETURNING id = {refId} · {isFr ? selectedDay.dayFr : selectedDay.dayEn}{" "}
+                    {selectedDay.dateNum}{" "}
                     {isFr ? selectedDay.monthFr : selectedDay.monthEn} · {activeSlot}
+                  </div>
+                  <div className="text-emerald-500/80">
+                    {isFr ? "-- statut : OK, ligne insérée" : "-- status: OK, 1 row inserted"}
+                    <span className="inline-block w-2 h-3 bg-emerald-400 ml-1 animate-pulse align-middle" />
                   </div>
                 </div>
 
@@ -567,7 +612,7 @@ export default function LetsTalkPage() {
                     type="button"
                     onClick={() => {
                       setIsSubmitted(false);
-                      setFormData({ name: "", email: "", company: "", message: "" });
+                      setFormData({ name: "", email: "", company: "", message: "", website: "" });
                     }}
                     className="text-xs uppercase tracking-wider text-[#0052ff] underline font-bold px-4 py-2.5 cursor-pointer"
                   >
@@ -593,6 +638,20 @@ export default function LetsTalkPage() {
                     {errorMessage}
                   </div>
                 )}
+
+                {/* Honeypot — hidden from humans, spam bots fill it */}
+                <input
+                  type="text"
+                  name="website"
+                  value={formData.website}
+                  onChange={(e) =>
+                    setFormData({ ...formData, website: e.target.value })
+                  }
+                  className="hidden"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                />
 
                 {/* Name & Email Row */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
