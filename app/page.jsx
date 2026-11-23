@@ -132,7 +132,15 @@ export default function Portfolio() {
               <div className="lg:col-span-9 bg-[#ebdcd0]/80 border border-black/10 rounded-2xl p-4 sm:p-8 lg:p-10 shadow-sm">
                 {/* Top Hero Cinematic Card Banner */}
                 <div className="relative rounded-xl overflow-hidden bg-slate-900 border border-black/20 mb-6 sm:mb-8 aspect-[16/10] sm:aspect-video max-h-[380px] w-full flex items-end">
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-slate-900/60 to-transparent z-10" />
+                  {activeProject.image && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={activeProject.image}
+                      alt={activeProject.fullTitle}
+                      className="absolute inset-0 w-full h-full object-cover blur-md scale-105"
+                    />
+                  )}
+                  <div className={`absolute inset-0 z-10 ${activeProject.image ? "bg-gradient-to-t from-black/80 via-black/30 to-black/10" : "bg-gradient-to-t from-black via-slate-900/60 to-transparent"}`} />
                   <div className="absolute inset-0 bg-[radial-gradient(#d94726_1px,transparent_1px)] [background-size:16px_16px] opacity-20" />
 
                   <div className="absolute inset-0 flex flex-col justify-center items-center text-center p-4 sm:p-6 z-20">

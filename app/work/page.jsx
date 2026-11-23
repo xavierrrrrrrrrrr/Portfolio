@@ -133,6 +133,18 @@ export default function WorkPage() {
                 </div>
               </div>
 
+              {/* Project image */}
+              {project.image && (
+                <div className="relative rounded-xl overflow-hidden border border-black/10 mb-4 sm:mb-6 aspect-[16/9] max-h-[320px] w-full">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={project.image}
+                    alt={project.fullTitle}
+                    className="absolute inset-0 w-full h-full object-cover blur-md scale-105"
+                  />
+                </div>
+              )}
+
               {/* Main Info */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
                 <div className="lg:col-span-8 space-y-4">
