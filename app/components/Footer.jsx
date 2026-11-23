@@ -12,7 +12,7 @@ export default function Footer() {
   useEffect(() => {
     const updateClock = () => {
       const now = new Date();
-      const options: Intl.DateTimeFormatOptions = {
+      const options = {
         timeZone: "America/Montreal",
         hour12: false,
         hour: "2-digit",
@@ -28,11 +28,11 @@ export default function Footer() {
   }, []);
 
   return (
-    <footer className="bg-[#f6f3eb] py-14 text-black border-t border-black/10">
-      <div className="max-w-7xl mx-auto px-6 lg:px-12">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start mb-12">
+    <footer className="bg-[#f6f3eb] py-12 sm:py-14 text-black border-t border-black/10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-8 items-start mb-10 sm:mb-12">
           {/* Col 1: Wordmark & Bio */}
-          <div className="md:col-span-5 space-y-3">
+          <div className="sm:col-span-2 md:col-span-5 space-y-3">
             <Link href="/" className="inline-block font-editorial-serif italic text-2xl font-bold hover:text-[#d94726] transition-colors">
               xavier boudreault.
             </Link>
@@ -51,7 +51,7 @@ export default function Footer() {
             </h4>
             <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs font-editorial-mono text-black/70">
               <a
-                className="hover:text-black hover:underline underline-offset-4"
+                className="hover:text-black hover:underline underline-offset-4 py-1"
                 href="https://github.com/xavierrrrrrrrrrr"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -59,7 +59,7 @@ export default function Footer() {
                 GitHub
               </a>
               <a
-                className="hover:text-black hover:underline underline-offset-4"
+                className="hover:text-black hover:underline underline-offset-4 py-1"
                 href="https://x.com"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -67,7 +67,7 @@ export default function Footer() {
                 X / Twitter
               </a>
               <a
-                className="hover:text-black hover:underline underline-offset-4"
+                className="hover:text-black hover:underline underline-offset-4 py-1"
                 href="https://linkedin.com"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -75,7 +75,7 @@ export default function Footer() {
                 LinkedIn
               </a>
               <a
-                className="hover:text-black hover:underline underline-offset-4"
+                className="hover:text-black hover:underline underline-offset-4 py-1"
                 href="https://bsky.app"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -83,7 +83,7 @@ export default function Footer() {
                 Bluesky
               </a>
               <a
-                className="hover:text-[#0052ff] font-bold hover:underline underline-offset-4"
+                className="hover:text-[#0052ff] font-bold hover:underline underline-offset-4 py-1"
                 href="https://rocky-pouliot.vercel.app"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -110,7 +110,7 @@ export default function Footer() {
         </div>
 
         {/* Bottom Credits & Legal */}
-        <div className="border-t border-black/10 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-[11px] font-editorial-mono text-black/50">
+        <div className="border-t border-black/10 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-center gap-3 text-[11px] font-editorial-mono text-black/50 text-center sm:text-left">
           <p>{t.footer.copyright}</p>
           <p className="text-center sm:text-right">{t.footer.colophon}</p>
         </div>

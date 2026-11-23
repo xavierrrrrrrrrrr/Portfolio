@@ -14,7 +14,7 @@ export default function ExperimentsPage() {
   const [scanlines, setScanlines] = useState(0.5);
   const [glow, setGlow] = useState(10);
   const [crtFreq, setCrtFreq] = useState(3);
-  const crtCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const crtCanvasRef = useRef(null);
 
   // Station 2: Fluid Type Scale Calculator
   const [minFont, setMinFont] = useState(1.25);
@@ -26,7 +26,7 @@ export default function ExperimentsPage() {
   // Station 3: Zero-Bundle State Store
   const [eventCount, setEventCount] = useState(42);
   const [lastLatency, setLastLatency] = useState(0.4);
-  const [eventLog, setEventLog] = useState<string[]>([
+  const [eventLog, setEventLog] = useState([
     "STATE_INIT [0.0ms] :: channel initialized",
     "DISPATCH #41 [0.3ms] :: subscriber received { count: 41 }",
     "DISPATCH #42 [0.4ms] :: payload synchronized across tabs",
@@ -40,9 +40,11 @@ export default function ExperimentsPage() {
   )}rem + ${(slope * 100 * 16).toFixed(4)}vw, ${maxFont}rem);`;
 
   const copyClamp = () => {
-    navigator.clipboard.writeText(clampCode);
-    setCopiedClamp(true);
-    setTimeout(() => setCopiedClamp(false), 2000);
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(clampCode);
+      setCopiedClamp(true);
+      setTimeout(() => setCopiedClamp(false), 2000);
+    }
   };
 
   const dispatchEvent = () => {
@@ -60,7 +62,7 @@ export default function ExperimentsPage() {
 
   // Animate CRT Station canvas
   useEffect(() => {
-    let animId: number;
+    let animId;
     let t = 0;
 
     const render = () => {
@@ -113,9 +115,9 @@ export default function ExperimentsPage() {
     <div className="bg-[#f6f3eb] text-[#0f1115] font-editorial-mono antialiased selection:bg-[#0052ff] selection:text-white min-h-screen flex flex-col justify-between">
       <Header />
 
-      <main className="flex-1 max-w-7xl mx-auto px-6 lg:px-12 py-16 w-full">
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-10 sm:py-16 w-full">
         {/* Breadcrumb */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <Link
             href="/"
             className="inline-flex items-center gap-2 text-xs uppercase tracking-wider text-black/60 hover:text-black transition-colors"
@@ -126,14 +128,14 @@ export default function ExperimentsPage() {
         </div>
 
         {/* Page Header */}
-        <div className="mb-16">
+        <div className="mb-12 sm:mb-16">
           <span className="text-xs font-editorial-mono uppercase tracking-widest text-[#0052ff] font-bold block mb-2">
             {isFr ? "Laboratoire de Recherche & Expérimentations" : "The Living Feed & Research Lab"}
           </span>
-          <h1 className="font-editorial-serif text-5xl sm:text-7xl font-bold tracking-tight text-black mb-4">
+          <h1 className="font-editorial-serif text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-black mb-3 sm:mb-4">
             {isFr ? "Expérimentations & Outils." : "Experiments & Dispatches."}
           </h1>
-          <p className="font-editorial-serif italic text-2xl sm:text-3xl text-black/80 max-w-3xl leading-relaxed">
+          <p className="font-editorial-serif italic text-xl sm:text-3xl text-black/80 max-w-3xl leading-relaxed">
             {isFr
               ? "Des prototypes interactifs, des outils typographiques algorithmiques et des essais explorant les limites du navigateur."
               : "Interactive shader playgrounds, algorithmic typography calculators, and editorial essays exploring web craft."}
@@ -141,12 +143,12 @@ export default function ExperimentsPage() {
         </div>
 
         {/* 4 Interactive Stations */}
-        <div className="space-y-16">
+        <div className="space-y-10 sm:space-y-16">
           {/* Station 01: Bespoke CRT Shader Pass */}
-          <section className="bg-white/80 border border-black/15 rounded-2xl p-6 sm:p-10 shadow-xs">
-            <div className="flex flex-wrap justify-between items-center pb-4 mb-6 border-b border-black/10 gap-3">
-              <div className="flex items-center gap-3">
-                <span className="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold font-editorial-mono">
+          <section className="bg-white/80 border border-black/15 rounded-2xl p-5 sm:p-8 lg:p-10 shadow-xs">
+            <div className="flex flex-wrap justify-between items-center pb-3 sm:pb-4 mb-4 sm:mb-6 border-b border-black/10 gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <span className="w-6 sm:w-7 h-6 sm:h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold font-editorial-mono">
                   01
                 </span>
                 <span className="text-xs uppercase font-bold tracking-wider text-emerald-600">
@@ -158,9 +160,9 @@ export default function ExperimentsPage() {
               </span>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-              <div className="lg:col-span-6 space-y-4">
-                <h3 className="font-editorial-serif text-3xl font-bold text-black">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center">
+              <div className="lg:col-span-6 space-y-3 sm:space-y-4">
+                <h3 className="font-editorial-serif text-2xl sm:text-3xl font-bold text-black">
                   {isFr
                     ? "Passe de post-traitement CRT avec phosphore"
                     : "Bespoke CRT Post-Processing Pass"}
@@ -172,7 +174,7 @@ export default function ExperimentsPage() {
                 </p>
 
                 {/* Interactive Sliders */}
-                <div className="space-y-4 pt-2">
+                <div className="space-y-3 sm:space-y-4 pt-2">
                   <div>
                     <div className="flex justify-between text-xs font-editorial-mono mb-1">
                       <span>{isFr ? "Opacité des lignes de balayage" : "Scanline Density / Opacity"}</span>
@@ -185,7 +187,7 @@ export default function ExperimentsPage() {
                       step="0.05"
                       value={scanlines}
                       onChange={(e) => setScanlines(parseFloat(e.target.value))}
-                      className="w-full accent-emerald-500 cursor-pointer"
+                      className="w-full accent-emerald-500 cursor-pointer h-2 bg-stone-200 rounded-lg"
                     />
                   </div>
 
@@ -201,7 +203,7 @@ export default function ExperimentsPage() {
                       step="1"
                       value={glow}
                       onChange={(e) => setGlow(parseInt(e.target.value))}
-                      className="w-full accent-emerald-500 cursor-pointer"
+                      className="w-full accent-emerald-500 cursor-pointer h-2 bg-stone-200 rounded-lg"
                     />
                   </div>
 
@@ -217,7 +219,7 @@ export default function ExperimentsPage() {
                       step="1"
                       value={crtFreq}
                       onChange={(e) => setCrtFreq(parseInt(e.target.value))}
-                      className="w-full accent-emerald-500 cursor-pointer"
+                      className="w-full accent-emerald-500 cursor-pointer h-2 bg-stone-200 rounded-lg"
                     />
                   </div>
                 </div>
@@ -225,7 +227,7 @@ export default function ExperimentsPage() {
 
               {/* Canvas viewport */}
               <div className="lg:col-span-6 flex justify-center">
-                <div className="w-full max-w-md bg-stone-900 p-4 rounded-xl border-4 border-stone-800 shadow-xl relative overflow-hidden">
+                <div className="w-full max-w-md bg-stone-900 p-3 sm:p-4 rounded-xl border-3 sm:border-4 border-stone-800 shadow-xl relative overflow-hidden">
                   <div className="absolute top-2 left-4 text-[9px] font-mono text-emerald-400/80">
                     GLSL_PASS_01 :: 60FPS
                   </div>
@@ -245,10 +247,10 @@ export default function ExperimentsPage() {
           </section>
 
           {/* Station 02: Fluid Type Scale Calculator */}
-          <section className="bg-white/80 border border-black/15 rounded-2xl p-6 sm:p-10 shadow-xs">
-            <div className="flex flex-wrap justify-between items-center pb-4 mb-6 border-b border-black/10 gap-3">
-              <div className="flex items-center gap-3">
-                <span className="w-7 h-7 rounded-full bg-[#d94726] text-white flex items-center justify-center text-xs font-bold font-editorial-mono">
+          <section className="bg-white/80 border border-black/15 rounded-2xl p-5 sm:p-8 lg:p-10 shadow-xs">
+            <div className="flex flex-wrap justify-between items-center pb-3 sm:pb-4 mb-4 sm:mb-6 border-b border-black/10 gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <span className="w-6 sm:w-7 h-6 sm:h-7 rounded-full bg-[#d94726] text-white flex items-center justify-center text-xs font-bold font-editorial-mono">
                   02
                 </span>
                 <span className="text-xs uppercase font-bold tracking-wider text-[#d94726]">
@@ -260,9 +262,9 @@ export default function ExperimentsPage() {
               </span>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              <div className="lg:col-span-6 space-y-4">
-                <h3 className="font-editorial-serif text-3xl font-bold text-black">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
+              <div className="lg:col-span-6 space-y-3 sm:space-y-4">
+                <h3 className="font-editorial-serif text-2xl sm:text-3xl font-bold text-black">
                   {isFr
                     ? "Générateur d'échelle typographique fluide"
                     : "Fluid Type Scale Calculator"}
@@ -326,12 +328,12 @@ export default function ExperimentsPage() {
                 </div>
 
                 {/* Generated Code snippet */}
-                <div className="bg-[#0f1115] text-emerald-400 p-4 rounded-xl font-mono text-xs flex items-center justify-between gap-3">
-                  <span className="truncate">font-size: {clampCode}</span>
+                <div className="bg-[#0f1115] text-emerald-400 p-3 sm:p-4 rounded-xl font-mono text-[11px] sm:text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 overflow-x-auto">
+                  <span className="truncate max-w-full">font-size: {clampCode}</span>
                   <button
                     type="button"
                     onClick={copyClamp}
-                    className="bg-emerald-500 text-black px-3 py-1.5 rounded font-bold uppercase text-[10px] shrink-0 hover:bg-emerald-400 transition-colors"
+                    className="bg-emerald-500 text-black px-3 py-1.5 rounded font-bold uppercase text-[10px] shrink-0 hover:bg-emerald-400 transition-colors cursor-pointer self-end sm:self-auto"
                   >
                     {copiedClamp ? "Copied!" : "Copy CSS"}
                   </button>
@@ -339,7 +341,7 @@ export default function ExperimentsPage() {
               </div>
 
               {/* Live Headline Preview */}
-              <div className="lg:col-span-6 bg-[#f6f3eb] border border-black/15 rounded-xl p-6 flex flex-col justify-center min-h-[200px]">
+              <div className="lg:col-span-6 bg-[#f6f3eb] border border-black/15 rounded-xl p-5 sm:p-6 flex flex-col justify-center min-h-[180px] sm:min-h-[200px]">
                 <span className="text-[10px] uppercase font-bold text-black/40 mb-3 tracking-widest block">
                   {isFr ? "Aperçu en direct" : "Live Render Preview"}
                 </span>
@@ -364,10 +366,10 @@ export default function ExperimentsPage() {
           </section>
 
           {/* Station 03: Zero-Bundle State Store */}
-          <section className="bg-white/80 border border-black/15 rounded-2xl p-6 sm:p-10 shadow-xs">
-            <div className="flex flex-wrap justify-between items-center pb-4 mb-6 border-b border-black/10 gap-3">
-              <div className="flex items-center gap-3">
-                <span className="w-7 h-7 rounded-full bg-[#0052ff] text-white flex items-center justify-center text-xs font-bold font-editorial-mono">
+          <section className="bg-white/80 border border-black/15 rounded-2xl p-5 sm:p-8 lg:p-10 shadow-xs">
+            <div className="flex flex-wrap justify-between items-center pb-3 sm:pb-4 mb-4 sm:mb-6 border-b border-black/10 gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <span className="w-6 sm:w-7 h-6 sm:h-7 rounded-full bg-[#0052ff] text-white flex items-center justify-center text-xs font-bold font-editorial-mono">
                   03
                 </span>
                 <span className="text-xs uppercase font-bold tracking-wider text-[#0052ff]">
@@ -379,9 +381,9 @@ export default function ExperimentsPage() {
               </span>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-              <div className="lg:col-span-6 space-y-4">
-                <h3 className="font-editorial-serif text-3xl font-bold text-black">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center">
+              <div className="lg:col-span-6 space-y-3 sm:space-y-4">
+                <h3 className="font-editorial-serif text-2xl sm:text-3xl font-bold text-black">
                   {isFr
                     ? "Bus d'événements ultra-léger (400 octets)"
                     : "Zero-Bundle Reactive State Store"}
@@ -392,11 +394,11 @@ export default function ExperimentsPage() {
                     : "A pure 400-byte event bus executing state sync at near-zero runtime cost. Click the button to benchmark simulated dispatch latency."}
                 </p>
 
-                <div className="pt-2 flex items-center gap-4">
+                <div className="pt-2 flex flex-wrap items-center gap-3 sm:gap-4">
                   <button
                     type="button"
                     onClick={dispatchEvent}
-                    className="bg-[#0052ff] hover:bg-blue-600 text-white text-xs uppercase tracking-wider px-6 py-3 rounded font-bold transition-all shadow-xs active:scale-95 cursor-pointer"
+                    className="bg-[#0052ff] hover:bg-blue-600 text-white text-xs uppercase tracking-wider px-5 sm:px-6 py-3 rounded font-bold transition-all shadow-xs active:scale-95 cursor-pointer"
                   >
                     <span>{isFr ? "Déclencher un événement" : "Dispatch Event"}</span>{" "}
                     (#{eventCount})
@@ -408,12 +410,12 @@ export default function ExperimentsPage() {
               </div>
 
               {/* Event Log Output */}
-              <div className="lg:col-span-6 bg-[#090a0d] text-emerald-400 p-5 rounded-xl border border-black font-mono text-[11px] space-y-1.5 shadow-inner">
+              <div className="lg:col-span-6 bg-[#090a0d] text-emerald-400 p-4 sm:p-5 rounded-xl border border-black font-mono text-[10px] sm:text-[11px] space-y-1.5 shadow-inner overflow-x-auto">
                 <div className="text-[10px] text-zinc-500 uppercase tracking-widest pb-2 border-b border-zinc-800">
                   EVENT LOG BUFFER [LIVE]
                 </div>
                 {eventLog.map((log, idx) => (
-                  <p key={idx} className={idx === 0 ? "text-emerald-300 font-bold" : "text-emerald-600/70"}>
+                  <p key={idx} className={`truncate ${idx === 0 ? "text-emerald-300 font-bold" : "text-emerald-600/70"}`}>
                     &gt; {log}
                   </p>
                 ))}
@@ -422,10 +424,10 @@ export default function ExperimentsPage() {
           </section>
 
           {/* Station 04: Editorial Essay */}
-          <section className="bg-white border border-black/15 rounded-2xl p-8 sm:p-12 shadow-sm">
-            <div className="flex flex-wrap justify-between items-center pb-4 mb-8 border-b border-black/10 gap-3">
-              <div className="flex items-center gap-3">
-                <span className="w-7 h-7 rounded-full bg-stone-900 text-white flex items-center justify-center text-xs font-bold font-editorial-mono">
+          <section className="bg-white border border-black/15 rounded-2xl p-5 sm:p-8 lg:p-12 shadow-sm">
+            <div className="flex flex-wrap justify-between items-center pb-3 sm:pb-4 mb-6 sm:mb-8 border-b border-black/10 gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <span className="w-6 sm:w-7 h-6 sm:h-7 rounded-full bg-stone-900 text-white flex items-center justify-center text-xs font-bold font-editorial-mono">
                   04
                 </span>
                 <span className="text-xs uppercase font-bold tracking-wider text-black">
@@ -437,13 +439,13 @@ export default function ExperimentsPage() {
               </span>
             </div>
 
-            <article className="max-w-3xl mx-auto space-y-6">
-              <h2 className="font-editorial-serif text-4xl sm:text-5xl font-bold text-black tracking-tight">
+            <article className="max-w-3xl mx-auto space-y-4 sm:space-y-6">
+              <h2 className="font-editorial-serif text-3xl sm:text-5xl font-bold text-black tracking-tight">
                 {isFr
                   ? "Le mythe du pur spécialiste."
                   : "The Myth of the Pure Specialist."}
               </h2>
-              <p className="font-editorial-serif italic text-xl text-[#d94726]">
+              <p className="font-editorial-serif italic text-lg sm:text-xl text-[#d94726]">
                 {isFr
                   ? "Pourquoi l'avenir du logiciel appartient aux généralistes capables de coder, concevoir des interfaces et penser en systèmes."
                   : "Why the future of software belongs to generalists who can write resilient code, compose typographic layouts, and think in holistic systems."}
@@ -463,7 +465,7 @@ export default function ExperimentsPage() {
                     : "The consequence has been an ocean of homogenized, soulless software bloated with unnecessary abstraction layers. Yet the most memorable digital products — from early personal computers to modern flagships like Aménagement R.P. — have always emerged when engineering and visual craftsmanship are exercised by the same curious mind."}
                 </p>
 
-                <blockquote className="p-4 bg-[#f6f3eb] border-l-4 border-[#0052ff] rounded-r-lg italic text-lg sm:text-xl text-black my-6">
+                <blockquote className="p-3.5 sm:p-4 bg-[#f6f3eb] border-l-4 border-[#0052ff] rounded-r-lg italic text-base sm:text-xl text-black my-4 sm:my-6">
                   {isFr
                     ? "« Lorsque vous maîtrisez à la fois la physique du shader et l'ordonnancement des microservices, vous ne négociez plus avec les limites de la plateforme : vous les redéfinissez. »"
                     : "“When you understand both the mathematics of a shader and the latency of distributed edge functions, you stop negotiating with technical boundaries — you expand them.”"}
@@ -476,7 +478,7 @@ export default function ExperimentsPage() {
                 </p>
               </div>
 
-              <div className="pt-8 border-t border-black/10 flex justify-between items-center text-xs font-editorial-mono text-black/60">
+              <div className="pt-6 sm:pt-8 border-t border-black/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs font-editorial-mono text-black/60">
                 <span>© Xavier Boudreault · Montreal, QC</span>
                 <Link href="/talk" className="text-[#0052ff] font-bold hover:underline">
                   {isFr ? "Discuter de ces idées →" : "Discuss these ideas →"}

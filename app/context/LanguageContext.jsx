@@ -2,128 +2,7 @@
 
 import React, { createContext, useContext, useState, useSyncExternalStore } from "react";
 
-export type Language = "en" | "fr";
-
-export interface ProjectData {
-  id: string;
-  category: string;
-  title: string;
-  bannerSubtitle: string;
-  bannerQuote: string;
-  techHeader: string;
-  status: string;
-  spotlight: string;
-  fullTitle: string;
-  description: string;
-  tags: string[];
-  quotePrefix: string;
-  quoteStrong: string;
-  quoteMiddle: string;
-  quoteEm: string;
-  quoteSuffix: string;
-  deployLabel: string;
-  ctaLabel: string;
-  link?: string;
-  clientType?: string;
-  year?: string;
-}
-
-export interface Translations {
-  nav: {
-    work: string;
-    capabilities: string;
-    experiments: string;
-    contact: string;
-    talk: string;
-  };
-  hero: {
-    title: string;
-    reimagining: string;
-    theWeb: string;
-    bio: string;
-    badgeContracts: string;
-    badgeStack: string;
-    badgeLocation: string;
-  };
-  tv: {
-    title: string;
-    model: string;
-    vsync: string;
-    ch1Title: string;
-    ch1Sub1: string;
-    ch1Sub2: string;
-    ch2Title: string;
-    ch2Sub1: string;
-    ch2Sub2: string;
-    ch3Title: string;
-    ch3Sub1: string;
-    ch3Sub2: string;
-    ch4Title: string;
-    ch4Sub1: string;
-    ch4Sub2: string;
-    signalOk: string;
-    knobHint: string;
-  };
-  work: {
-    titlePrefix: string;
-    titleSuffix: string;
-    viewArchive: string;
-  };
-  matrix: {
-    badge: string;
-    title: string;
-    subtitle: string;
-    col1Title: string;
-    col1Sub: string;
-    col1Points: string[];
-    col2Title: string;
-    col2Sub: string;
-    col2Points: string[];
-    col3Title: string;
-    col3Sub: string;
-    col3Points: string[];
-  };
-  experiments: {
-    badge: string;
-    title: string;
-    viewAll: string;
-    exp1Badge: string;
-    exp1Title: string;
-    exp1Desc: string;
-    exp1Status: string;
-    exp2Badge: string;
-    exp2Title: string;
-    exp2Desc: string;
-    exp2Status: string;
-    exp3Badge: string;
-    exp3Title: string;
-    exp3Desc: string;
-    exp3Status: string;
-    exp4Badge: string;
-    exp4Title: string;
-    exp4Desc: string;
-    exp4Status: string;
-  };
-  contact: {
-    title: string;
-    badge: string;
-    lead: string;
-    introBtn: string;
-    cvBtn: string;
-    responseTime: string;
-  };
-  footer: {
-    bio: string;
-    networkTitle: string;
-    clockTitle: string;
-    location: string;
-    copyright: string;
-    colophon: string;
-  };
-  projects: ProjectData[];
-}
-
-const TRANSLATIONS: Record<Language, Translations> = {
+const TRANSLATIONS = {
   en: {
     nav: {
       work: "Selected Work",
@@ -174,7 +53,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
       col1Sub:
         "Designing performant, scalable distributed web platforms. Clean APIs, zero-runtime overhead, strict typing, and high-velocity shipping.",
       col1Points: [
-        "Full-Stack TypeScript & React",
+        "Full-Stack JavaScript & React",
         "Next.js Server Components & SSR",
         "Database Schema Design (PostgreSQL)",
         "REST & GraphQL API Pipelines",
@@ -256,7 +135,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
         description:
           "In a digital landscape crowded with automated noise, the platform delivers intimate, high-impact investigative documentary web experiences. Featuring custom video timeline streaming, interactive mapping, and low-latency reader dispatches.",
         tags: [
-          "TypeScript",
+          "JavaScript",
           "Next.js App Router",
           "Tailwind CSS",
           "Three.js / WebGL",
@@ -279,7 +158,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
         bannerSubtitle: "Architecture & Interface by Xavier",
         bannerQuote:
           "“Heavy civil engineering precision meets high-performance web performance.”",
-        techHeader: "Next.js App Router · TypeScript · Tailwind CSS · Vercel",
+        techHeader: "Next.js App Router · JavaScript · Tailwind CSS · Vercel",
         status: "Live Production",
         spotlight: "PRODUCTION CLIENT · 2025",
         fullTitle:
@@ -288,7 +167,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
           "A flagship web platform engineered for an elite excavation and civil engineering leader in Outaouais and Petite-Nation. Features precision laser-grading showcases, bilingual localization, dynamic project portfolios, and high-conversion client inquiry pipelines.",
         tags: [
           "Next.js",
-          "TypeScript",
+          "JavaScript",
           "Tailwind CSS",
           "Vercel Edge",
           "i18n Architecture",
@@ -311,13 +190,13 @@ const TRANSLATIONS: Record<Language, Translations> = {
         title: "Ledger & Vector",
         bannerSubtitle: "Architecture & Interface by Xavier",
         bannerQuote: "“Sub-millisecond financial clarity without visual clutter.”",
-        techHeader: "React · TypeScript · PostgreSQL · WebSockets",
+        techHeader: "React · JavaScript · PostgreSQL · WebSockets",
         status: "Production",
         spotlight: "FINTECH ARCHITECTURE · 2025",
         fullTitle: "Ledger & Vector: Real-Time Treasury Engine",
         description:
           "A multi-currency liquidity dashboard engineered for high-frequency reconciliation. Built with optimistic UI updates, keyboard-first navigation, and deterministic state machines.",
-        tags: ["TypeScript", "React", "PostgreSQL", "Tailwind CSS", "WebSockets"],
+        tags: ["JavaScript", "React", "PostgreSQL", "Tailwind CSS", "WebSockets"],
         quotePrefix: "Financial software usually feels like a spreadsheet from 1998. ",
         quoteStrong: "Ledger & Vector",
         quoteMiddle: " turns complex liquidity flows into ",
@@ -390,7 +269,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
       theWeb: " le web.",
       bio: "L'ingénierie logicielle full-stack rencontre la direction artistique éditoriale. Conception de produits numériques résilients, de médias interactifs et d'interfaces tactiles sur mesure.",
       badgeContracts: "Disponible T2/T3 pour mandats",
-      badgeStack: "TypeScript · Next.js · Tech Créative",
+      badgeStack: "JavaScript · Next.js · Tech Créative",
       badgeLocation: "Montréal, QC [HNE]",
     },
     tv: {
@@ -424,9 +303,9 @@ const TRANSLATIONS: Record<Language, Translations> = {
         "Une architecture technique robuste fusionnée avec une exécution graphique méticuleuse.",
       col1Title: "Architecture & Ingénierie",
       col1Sub:
-        "Conception de plateformes web distribuées, performantes et évolutives. APIs épurées, zéro surplus d'exécution, typage strict et déploiement continu rapide.",
+        "Conception de plateformes web distribuées, performantes et évolutives. APIs épurées, zéro surplus d'exécution, clarté et déploiement continu rapide.",
       col1Points: [
-        "TypeScript & React Full-Stack",
+        "JavaScript & React Full-Stack",
         "Composants Serveur Next.js & SSR",
         "Modélisation de bases de données (PostgreSQL)",
         "Pipelines d'APIs REST & GraphQL",
@@ -508,7 +387,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
         description:
           "Dans un écosystème numérique saturé de bruit automatisé, la plateforme propose des expériences documentaires d'investigation immersives. Diffusion vidéo avec synchronisation temporelle sur mesure, cartographie interactive et dépêches en direct.",
         tags: [
-          "TypeScript",
+          "JavaScript",
           "Next.js App Router",
           "Tailwind CSS",
           "Three.js / WebGL",
@@ -531,7 +410,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
         bannerSubtitle: "Architecture & Interface par Xavier",
         bannerQuote:
           "« La précision du génie civil lourd alliée à la performance web moderne. »",
-        techHeader: "Next.js App Router · TypeScript · Tailwind CSS · Vercel",
+        techHeader: "Next.js App Router · JavaScript · Tailwind CSS · Vercel",
         status: "Production en direct",
         spotlight: "CLIENT EN PRODUCTION · 2025",
         fullTitle:
@@ -540,7 +419,7 @@ const TRANSLATIONS: Record<Language, Translations> = {
           "Plateforme web de référence conçue pour un leader de l'excavation et du génie civil en Outaouais et Petite-Nation. Vitrine de nivellement laser haute précision, bilinguisme intégral, galeries de réalisations dynamiques et entonnoir d'acquisition direct.",
         tags: [
           "Next.js",
-          "TypeScript",
+          "JavaScript",
           "Tailwind CSS",
           "Vercel Edge",
           "Architecture i18n",
@@ -563,13 +442,13 @@ const TRANSLATIONS: Record<Language, Translations> = {
         title: "Ledger & Vector",
         bannerSubtitle: "Architecture & Interface par Xavier",
         bannerQuote: "« Clarté financière sub-milliseconde sans encombrement visuel. »",
-        techHeader: "React · TypeScript · PostgreSQL · WebSockets",
+        techHeader: "React · JavaScript · PostgreSQL · WebSockets",
         status: "Production",
         spotlight: "ARCHITECTURE FINTECH · 2025",
         fullTitle: "Ledger & Vector : Moteur de trésorerie en temps réel",
         description:
           "Tableau de bord de liquidité multidevise conçu pour la réconciliation haute fréquence. Mises à jour d'interface optimistes, navigation prioritaire au clavier et automates à états finis déterministes.",
-        tags: ["TypeScript", "React", "PostgreSQL", "Tailwind CSS", "WebSockets"],
+        tags: ["JavaScript", "React", "PostgreSQL", "Tailwind CSS", "WebSockets"],
         quotePrefix: "Les logiciels financiers ressemblent souvent à des tableurs de 1998. ",
         quoteStrong: "Ledger & Vector",
         quoteMiddle: " transforme les flux de liquidité complexes en un ",
@@ -630,35 +509,30 @@ const TRANSLATIONS: Record<Language, Translations> = {
   },
 };
 
-interface LanguageContextType {
-  language: Language;
-  setLanguage: (lang: Language) => void;
-  toggleLanguage: () => void;
-  t: Translations;
-}
+const LanguageContext = createContext(undefined);
 
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
-
-const subscribeToStorage = (callback: () => void) => {
+const subscribeToStorage = (callback) => {
   window.addEventListener("storage", callback);
   return () => window.removeEventListener("storage", callback);
 };
 
-const getClientSnapshot = (): Language => {
+const getClientSnapshot = () => {
   try {
-    const saved = localStorage.getItem("xb_portfolio_lang") as Language | null;
+    const saved = localStorage.getItem("xb_portfolio_lang");
     if (saved === "en" || saved === "fr") return saved;
-    if (navigator.language.toLowerCase().startsWith("fr")) return "fr";
+    if (typeof navigator !== "undefined" && navigator.language.toLowerCase().startsWith("fr")) {
+      return "fr";
+    }
   } catch {
     // fallback
   }
   return "en";
 };
 
-const getServerSnapshot = (): Language => "en";
+const getServerSnapshot = () => "en";
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [overrideLang, setOverrideLang] = useState<Language | null>(null);
+export function LanguageProvider({ children }) {
+  const [overrideLang, setOverrideLang] = useState(null);
 
   const clientLang = useSyncExternalStore(
     subscribeToStorage,
@@ -666,9 +540,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     getServerSnapshot
   );
 
-  const language: Language = overrideLang ?? clientLang;
+  const language = overrideLang ?? clientLang;
 
-  const setLanguage = (lang: Language) => {
+  const setLanguage = (lang) => {
     setOverrideLang(lang);
     if (typeof window !== "undefined") {
       try {

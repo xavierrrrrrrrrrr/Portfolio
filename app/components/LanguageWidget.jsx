@@ -3,7 +3,7 @@
 import React from "react";
 import { useLanguage } from "../context/LanguageContext";
 
-export default function LanguageWidget({ className = "" }: { className?: string }) {
+export default function LanguageWidget({ className = "" }) {
   const { language, setLanguage } = useLanguage();
 
   return (
@@ -16,7 +16,7 @@ export default function LanguageWidget({ className = "" }: { className?: string 
         type="button"
         onClick={() => setLanguage("en")}
         aria-pressed={language === "en"}
-        className={`px-2.5 py-1 rounded transition-all font-bold tracking-wider ${
+        className={`px-2.5 py-1 rounded transition-all font-bold tracking-wider cursor-pointer ${
           language === "en"
             ? "bg-black text-white shadow-xs"
             : "text-black/60 hover:text-black"
@@ -29,7 +29,7 @@ export default function LanguageWidget({ className = "" }: { className?: string 
         type="button"
         onClick={() => setLanguage("fr")}
         aria-pressed={language === "fr"}
-        className={`px-2.5 py-1 rounded transition-all font-bold tracking-wider ${
+        className={`px-2.5 py-1 rounded transition-all font-bold tracking-wider cursor-pointer ${
           language === "fr"
             ? "bg-black text-white shadow-xs"
             : "text-black/60 hover:text-black"
