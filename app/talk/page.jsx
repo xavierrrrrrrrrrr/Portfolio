@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useLanguage } from "../context/LanguageContext";
 import Header from "../components/Header";
@@ -23,6 +23,10 @@ const CAROUSEL_DAYS = [
   { key: "2026-12-10", dayEn: "Wed", dayFr: "Mer", dateNum: 10, monthEn: "Dec", monthFr: "Déc", fullDate: "Dec 10, 2026" },
   { key: "2026-12-11", dayEn: "Thu", dayFr: "Jeu", dateNum: 11, monthEn: "Dec", monthFr: "Déc", fullDate: "Dec 11, 2026" },
 ];
+
+function fallbackInquiryRef() {
+  return `#XB-INQ-${Math.floor(1000 + Math.random() * 9000)}`;
+}
 
 export default function LetsTalkPage() {
   const { language } = useLanguage();
@@ -62,8 +66,6 @@ export default function LetsTalkPage() {
   // Carousel ref
   const carouselTrackRef = useRef(null);
 
-  const selectedDay = CAROUSEL_DAYS[selectedDayIndex] || CAROUSEL_DAYS[0];
-
   const scrollCarousel = (direction) => {
     if (!carouselTrackRef.current) return;
     const scrollAmount = direction === "left" ? -220 : 220;
@@ -78,9 +80,8 @@ export default function LetsTalkPage() {
     }
   };
 
-  // Fetch inquiries from SQLite database
-  const fetchInquiries = async () => {
-    setLoadingDb(true);
+  // Load bookings without touching the drawer's loading state
+  const loadBookings = useCallback(async () => {
     try {
       const res = await fetch("/api/contact");
       const data = await res.json();
@@ -89,10 +90,24 @@ export default function LetsTalkPage() {
       }
     } catch (err) {
       console.error("Failed to load inquiries from DB:", err);
+    }
+  }, []);
+
+  // Fetch inquiries from SQLite database (with loading indicator)
+  const fetchInquiries = useCallback(async () => {
+    setLoadingDb(true);
+    try {
+      await loadBookings();
     } finally {
       setLoadingDb(false);
     }
-  };
+  }, [loadBookings]);
+
+  // Load existing bookings on mount so taken slots can be disabled
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetching external data on mount
+    loadBookings();
+  }, [loadBookings]);
 
   const toggleDbLog = () => {
     const nextState = !showDbLog;
@@ -118,8 +133,8 @@ export default function LetsTalkPage() {
       budget: budget,
       timeline: timeline,
       message: formData.message,
-      selected_day: `${isFr ? selectedDay.dayFr : selectedDay.dayEn} ${selectedDay.dateNum} ${isFr ? selectedDay.monthFr : selectedDay.monthEn}`,
-      selected_slot: selectedSlot,
+      selected_day: selectedDay.key,
+      selected_slot: activeSlot,
     };
 
     try {
@@ -136,11 +151,12 @@ export default function LetsTalkPage() {
       }
 
       setRefId(result.reference || `#XB-INQ-${String(result.id).padStart(4, "0")}`);
+      fetchInquiries();
       setIsSubmitted(true);
     } catch (err) {
       console.error("Database submission error:", err);
       // Fallback display
-      setRefId(`#XB-INQ-${Math.floor(1000 + Math.random() * 9000)}`);
+      setRefId(fallbackInquiryRef());
       setIsSubmitted(true);
     } finally {
       setIsSubmitting(false);
@@ -166,6 +182,43 @@ export default function LetsTalkPage() {
     : ["Immediate", "1–2 months", "Q2 / Q3", "Flexible"];
 
   const timeSlots = ["10:30 EST", "14:00 EST", "16:30 EST"];
+
+  // Slots already taken in the database, keyed as "YYYY-MM-DD|HH:MM EST"
+  const bookedSlots = useMemo(() => {
+    const set = new Set();
+    dbInquiries.forEach((inq) => {
+      if (inq.selected_day && inq.selected_slot) {
+        set.add(`${inq.selected_day}|${inq.selected_slot}`);
+      }
+    });
+    return set;
+  }, [dbInquiries]);
+
+  const isSlotBooked = (dayKey, slot) => bookedSlots.has(`${dayKey}|${slot}`);
+  const isDayFullyBooked = (day) =>
+    timeSlots.every((slot) => isSlotBooked(day.key, slot));
+
+  // Resolve the effective selection, skipping days/slots already booked.
+  // (Derived rather than corrected via effect to avoid cascading renders.)
+  const firstFreeDayIndex = CAROUSEL_DAYS.findIndex((day) => !isDayFullyBooked(day));
+  const activeDayIndex =
+    selectedDayIndex >= 0 &&
+    CAROUSEL_DAYS[selectedDayIndex] &&
+    !isDayFullyBooked(CAROUSEL_DAYS[selectedDayIndex])
+      ? selectedDayIndex
+      : firstFreeDayIndex === -1
+        ? selectedDayIndex
+        : firstFreeDayIndex;
+  const selectedDay = CAROUSEL_DAYS[activeDayIndex] || CAROUSEL_DAYS[0];
+  const activeSlot = isSlotBooked(selectedDay.key, selectedSlot)
+    ? timeSlots.find((slot) => !isSlotBooked(selectedDay.key, slot)) || selectedSlot
+    : selectedSlot;
+
+  // Display helper: stored day keys ("2026-11-25") back to readable labels
+  const formatStoredDay = (value) => {
+    const match = CAROUSEL_DAYS.find((day) => day.key === value);
+    return match ? match.fullDate : value;
+  };
 
   return (
     <div className="bg-[#f6f3eb] text-[#0f1115] font-editorial-mono antialiased selection:bg-[#0052ff] selection:text-white min-h-screen flex flex-col justify-between">
@@ -254,7 +307,7 @@ export default function LetsTalkPage() {
                           {inq.budget || "—"}
                         </td>
                         <td className="py-2.5 pr-4 text-neutral-400 whitespace-nowrap">
-                          {inq.selected_day} · {inq.selected_slot}
+                          {formatStoredDay(inq.selected_day)} · {inq.selected_slot}
                         </td>
                         <td className="py-2.5 text-neutral-500 whitespace-nowrap">{inq.created_at}</td>
                       </tr>
@@ -372,16 +425,21 @@ export default function LetsTalkPage() {
                   style={{ scrollbarWidth: "thin" }}
                 >
                   {CAROUSEL_DAYS.map((day, idx) => {
-                    const isSelected = idx === selectedDayIndex;
+                    const isSelected = idx === activeDayIndex;
+                    const dayBooked = isDayFullyBooked(day);
                     return (
                       <button
                         key={day.key}
                         type="button"
                         onClick={() => setSelectedDayIndex(idx)}
-                        className={`shrink-0 w-18 sm:w-20 p-2 sm:p-2.5 rounded-xl border text-center transition-all cursor-pointer snap-start flex flex-col justify-between items-center ${
-                          isSelected
-                            ? "bg-black text-white border-black font-bold shadow-md scale-102 ring-2 ring-black/20"
-                            : "bg-white/80 border-black/15 hover:border-black/40 text-black/80 hover:bg-white"
+                        disabled={dayBooked}
+                        title={dayBooked ? (isFr ? "Complètement réservé" : "Fully booked") : undefined}
+                        className={`shrink-0 w-18 sm:w-20 p-2 sm:p-2.5 rounded-xl border text-center transition-all snap-start flex flex-col justify-between items-center ${
+                          dayBooked
+                            ? "bg-neutral-200/60 border-neutral-300 text-neutral-400 cursor-not-allowed line-through"
+                            : isSelected
+                              ? "bg-black text-white border-black font-bold shadow-md scale-102 ring-2 ring-black/20 cursor-pointer"
+                              : "bg-white/80 border-black/15 hover:border-black/40 text-black/80 hover:bg-white cursor-pointer"
                         }`}
                       >
                         <span className={`text-[9px] sm:text-[10px] uppercase tracking-wider ${isSelected ? "text-white/80" : "text-black/60"}`}>
@@ -406,20 +464,32 @@ export default function LetsTalkPage() {
                   2. {isFr ? "Choisir l'heure (HNE) :" : "Select Time (EST):"}
                 </span>
                 <div className="grid grid-cols-3 gap-2">
-                  {timeSlots.map((slot) => (
-                    <button
-                      key={slot}
-                      type="button"
-                      onClick={() => setSelectedSlot(slot)}
-                      className={`py-2 px-1 text-center rounded border text-[11px] sm:text-xs transition-all cursor-pointer ${
-                        selectedSlot === slot
-                          ? "bg-[#0052ff] text-white border-[#0052ff] font-bold shadow-xs"
-                          : "bg-white/70 border-black/10 hover:border-black/30 text-black/80"
-                      }`}
-                    >
-                      {slot}
-                    </button>
-                  ))}
+                  {timeSlots.map((slot) => {
+                    const slotBooked = isSlotBooked(selectedDay.key, slot);
+                    return (
+                      <button
+                        key={slot}
+                        type="button"
+                        onClick={() => setSelectedSlot(slot)}
+                        disabled={slotBooked}
+                        title={slotBooked ? (isFr ? "Créneau déjà réservé" : "Slot already booked") : undefined}
+                        className={`py-2 px-1 text-center rounded border text-[11px] sm:text-xs transition-all ${
+                          slotBooked
+                            ? "bg-neutral-200/60 border-neutral-300 text-neutral-400 line-through cursor-not-allowed"
+                            : activeSlot === slot
+                              ? "bg-[#0052ff] text-white border-[#0052ff] font-bold shadow-xs cursor-pointer"
+                              : "bg-white/70 border-black/10 hover:border-black/30 text-black/80 cursor-pointer"
+                        }`}
+                      >
+                        {slot}
+                        {slotBooked && (
+                          <span className="block text-[8px] uppercase tracking-wider no-underline">
+                            {isFr ? "Réservé" : "Booked"}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -431,7 +501,7 @@ export default function LetsTalkPage() {
                   </span>
                   <span className="font-bold text-black text-xs sm:text-sm truncate block">
                     {isFr ? selectedDay.dayFr : selectedDay.dayEn} {selectedDay.dateNum}{" "}
-                    {isFr ? selectedDay.monthFr : selectedDay.monthEn} · {selectedSlot}
+                    {isFr ? selectedDay.monthFr : selectedDay.monthEn} · {activeSlot}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 text-[10px] sm:text-[11px] text-emerald-700 font-bold bg-emerald-100 px-2 sm:px-2.5 py-1 rounded-full shrink-0">
@@ -486,7 +556,7 @@ export default function LetsTalkPage() {
                   <div>BUDGET: {budget}</div>
                   <div>
                     SLOT: {isFr ? selectedDay.dayFr : selectedDay.dayEn} {selectedDay.dateNum}{" "}
-                    {isFr ? selectedDay.monthFr : selectedDay.monthEn} · {selectedSlot}
+                    {isFr ? selectedDay.monthFr : selectedDay.monthEn} · {activeSlot}
                   </div>
                 </div>
 
