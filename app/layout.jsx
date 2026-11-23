@@ -1,5 +1,6 @@
 import "./globals.css";
 import { LanguageProvider } from "./context/LanguageContext";
+import BootScreen from "./components/BootScreen";
 
 export const viewport = {
   width: "device-width",
@@ -21,7 +22,10 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className="scroll-smooth" data-scroll-behavior="smooth">
       <body className="min-h-screen bg-[#f6f3eb] text-[#0f1115] antialiased overflow-x-hidden selection:bg-[#0052ff] selection:text-white pb-[env(safe-area-inset-bottom)]">
-        <LanguageProvider>{children}</LanguageProvider>
+        <LanguageProvider>
+          <BootScreen />
+          {children}
+        </LanguageProvider>
       </body>
     </html>
   );

@@ -22,8 +22,6 @@ export default function CrtMonitor() {
   const audioRef = useRef(null);
   const audioCtxRef = useRef(null);
   const analyserRef = useRef(null);
-  const bassRef = useRef(0); // smoothed bass energy 0..1
-  const jumpRef = useRef(0); // bass-hit jump impulse 0..1
 
   // Live clock (America/Toronto) for the CH-01 terminal readout
   useEffect(() => {
@@ -153,8 +151,6 @@ export default function CrtMonitor() {
     // Always leave a clean screen when the music stops
     if (!isPlaying || !isPowerOn) {
       ctx.clearRect(0, 0, W, H);
-      bassRef.current = 0;
-      jumpRef.current = 0;
       return;
     }
 
@@ -162,6 +158,22 @@ export default function CrtMonitor() {
     const dancerCount = 5;
     const colors = ["#34d399", "#34d399", "#38bdf8", "#34d399", "#fb923c"];
     const freqData = new Uint8Array(1024);
+
+    // Each dancer owns a frequency band (bin ranges at 48 kHz, ~23 Hz/bin):
+    //   0: sub-bass 20–95 Hz · 1: low 115–280 Hz · 2: mid 300–700 Hz
+    //   3: high-mid 720–1870 Hz · 4: presence 1900–4700 Hz
+    const BANDS = [
+      [1, 4],
+      [5, 12],
+      [13, 30],
+      [31, 80],
+      [81, 200],
+    ];
+    // Higher bands carry less energy — per-band hit thresholds
+    const HIT_THRESHOLD = [0.28, 0.22, 0.18, 0.14, 0.1];
+    const energies = new Array(dancerCount).fill(0);
+    const jumps = new Array(dancerCount).fill(0);
+    const prevRaw = new Array(dancerCount).fill(0);
 
     const limb = (x1, y1, x2, y2) => {
       ctx.beginPath();
@@ -207,29 +219,29 @@ export default function CrtMonitor() {
     };
 
     let rafId;
-    let prevBass = 0;
     const render = (now) => {
       ctx.clearRect(0, 0, W, H);
 
-      // Sample the real sub-bass band (~20–95 Hz ≈ bins 1–4 at 48 kHz)
-      let bass = bassRef.current;
+      // Sample the real spectrum: each dancer reacts to its own band
       const analyser = analyserRef.current;
       if (analyser) {
         analyser.getByteFrequencyData(freqData);
-        let sum = 0;
-        for (let i = 1; i <= 4; i++) sum += freqData[i];
-        const raw = sum / (4 * 255);
-        bass = bassRef.current * 0.75 + raw * 0.25;
-        // Bass hit detection: sharp rise in the low end triggers a jump
-        if (raw > 0.28 && raw > prevBass * 1.15) {
-          jumpRef.current = 1;
+        for (let i = 0; i < dancerCount; i++) {
+          const [lo, hi] = BANDS[i];
+          let sum = 0;
+          for (let b = lo; b <= hi; b++) sum += freqData[b];
+          const raw = sum / ((hi - lo + 1) * 255);
+          energies[i] = energies[i] * 0.75 + raw * 0.25;
+          // Per-dancer hit: a sharp rise in ITS band triggers ITS jump
+          if (raw > HIT_THRESHOLD[i] && raw > prevRaw[i] * 1.2) {
+            jumps[i] = 1;
+          }
+          prevRaw[i] = raw;
+          jumps[i] *= 0.92;
         }
-        prevBass = raw;
+      } else {
+        for (let i = 0; i < dancerCount; i++) jumps[i] *= 0.92;
       }
-      bassRef.current = bass;
-      jumpRef.current *= 0.92; // jump impulse decays a bit slower
-      const energy = Math.min(1, bass * 1.6);
-      const jump = jumpRef.current;
 
       // dance-floor strip
       ctx.fillStyle = "rgba(0,0,0,0.4)";
@@ -241,12 +253,19 @@ export default function CrtMonitor() {
       ctx.lineTo(W, groundY);
       ctx.stroke();
 
-      // ~132 BPM idle groove; dancers kick harder when the bass hits
+      // ~132 BPM idle groove; each dancer dances to its own frequency band
       const beat = (now / 1000) * Math.PI * 2 * 2.2;
       const h = H * 0.34;
       for (let i = 0; i < dancerCount; i++) {
         const cx = (W / (dancerCount + 1)) * (i + 1);
-        drawDancer(cx, h, beat + i * 0.9, colors[i % colors.length], energy, jump);
+        drawDancer(
+          cx,
+          h,
+          beat + i * 0.9,
+          colors[i % colors.length],
+          Math.min(1, energies[i] * 1.6),
+          jumps[i]
+        );
       }
       rafId = requestAnimationFrame(render);
     };
